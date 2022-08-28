@@ -1,0 +1,105 @@
+#include "stm32f4xx.h"
+
+float calcula(float freq);
+void delay(int loop);
+void pisca(int reps);
+
+
+int main(void)
+{
+	RCC->APB2ENR|=0x20000;
+	RCC->AHB1ENR=0x87;
+	TIM10->CR1=0x05;
+	TIM10->PSC=15999;
+	TIM10->ARR=calcula(5);
+	GPIOA->MODER|=0x28555501;
+	GPIOB->MODER|=0x1;
+
+
+	while (1)
+	{
+		int chave=0;
+
+		if ((GPIOC->IDR&=0x01)==0x01)
+			chave=1;
+
+		if ((GPIOC->IDR&=0x02)==0x02)
+			chave=2;
+
+		if ((GPIOC->IDR&=0x1)==0x1 && (GPIOC->IDR&=0x2)==0x2)
+			chave=3;
+
+		if ((GPIOC->IDR&=0x4)==0x4)
+			chave=4;
+
+		if ((GPIOC->IDR&=0x4)==0x4 && (GPIOC->IDR&=0x1)==0x1)
+			chave=5;
+
+		if ((GPIOC->IDR&=0x4)==0x4 && (GPIOC->IDR&=0x2)==0x2)
+			chave=0;
+
+		if ((GPIOC->IDR&=0x4)==0x4 && (GPIOC->IDR&=0x2)==0x2 && (GPIOC->IDR&=0x1)==0x1)
+			chave=0;
+
+		switch (chave)
+		{
+			case 1:
+				pisca(1);
+				delay(10);
+				break;
+			case 2:
+				pisca(2);
+				delay(10);
+				break;
+			case 3:
+				pisca(3);
+				delay(10);
+				break;
+			case 4:
+				pisca(4);
+				delay(10);
+				break;
+			case 5:
+				pisca(5);
+				delay(10);
+				break;
+			default:
+				GPIOA->ODR|=0x20;
+				break;
+		}
+
+	}
+
+}
+
+void delay(int loop)
+{
+	int i=0;
+	while (i<loop)
+	{
+		while ((TIM10->SR&0x01)==0){}
+			TIM10->SR&=~(0x01);
+			i++;
+	}
+}
+
+float calcula(float freq)
+{
+	float arr;
+	arr=(16000000/16000/freq/2)-1;
+	return arr;
+}
+
+void pisca(int reps)
+{
+
+	int j=0;
+	while (j<reps)
+	{
+		GPIOA->ODR |= 0x20;
+		delay(1);
+		GPIOA->ODR &= ~(0x20);
+		delay(1);
+		j++;
+	}
+}
